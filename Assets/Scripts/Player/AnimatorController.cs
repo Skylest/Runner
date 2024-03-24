@@ -9,6 +9,7 @@ namespace Assets.Scripts.Player
         void Start()
         {
             animator = GetComponent<Animator>();
+            AnimateRun();
         }
 
         public void AnimateJump()
@@ -19,27 +20,28 @@ namespace Assets.Scripts.Player
         
         public void AnimateLand()
         {
+            animator.ResetTrigger("Jump");
             animator.SetTrigger("Land");
         }
-       
-        public void AnimateRun() 
-        {
-            animator.SetFloat("z", 1f);
-        }
-        
-        public void AnimateSprint()
-        {
-            animator.SetFloat("z", 2f);
-        }
-        
+
         public void AnimateStay()
         {
             animator.SetFloat("z", 0f);
         }
-        
-        public void AnimateSomersault()
+
+        public void AnimateRun() 
         {
-            animator.SetTrigger("Somersault");
+            animator.SetFloat("z", 1f);
+        }
+
+        public void AnimateSprint()
+        {
+            animator.SetFloat("z", 2f);
+        }
+
+        public void Roll()
+        {
+            animator.SetTrigger("Roll");
         }
     }
 }

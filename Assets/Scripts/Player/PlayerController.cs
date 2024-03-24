@@ -7,29 +7,35 @@ namespace Assets.Scripts.Player
         private float speed = 12f; // Скорость движения персонажа
         private readonly float laneWidth = 3f; // Ширина каждой полосы движения
         private int currentLane = 0; // Текущая полоса (-1 - влево, 0 - по центру, 1 - вправо)
-        private float speedStrafe = 15f;
+        private float speedRun = 12f;
+        private float speedSprint = 15f;
         private float jumpForce = 50f;
         private bool isGrounded;
+        private bool isDead = false;
 
         private SwipeInput swipeInput;
         private AnimatorController animator;
         private Rigidbody _rigidbody;
+        private CapsuleCollider capsuleCollider;
 
         void Start()
         {
-
+            capsuleCollider = GetComponent<CapsuleCollider>();
             swipeInput = GetComponent<SwipeInput>();
             _rigidbody = GetComponent<Rigidbody>();
-            animator = GetComponent<AnimatorController>();
+            animator = GetComponent<AnimatorController>();            
         }
 
         private void Update()
         {
+            if (isDead)
+                return;
+
             // Обработка ввода клавиш
             HandleKeyInput();
 
             MoveRun();
-            MoveToLane();
+            MoveToLane();            
         }
 
         private void HandleKeyInput()
@@ -38,6 +44,18 @@ namespace Assets.Scripts.Player
             if (Input.GetKeyDown(KeyCode.A))
             {
                 currentLane = Mathf.Clamp(currentLane - 1, -1, 1);
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftShift))
+            {
+                animator.AnimateSprint();
+                speed = speedSprint;
+            }
+
+            if (Input.GetKeyUp(KeyCode.LeftShift))
+            {
+                animator.AnimateRun();
+                speed = speedRun;
             }
 
             if (Input.GetKeyDown(KeyCode.D))
@@ -58,7 +76,9 @@ namespace Assets.Scripts.Player
 
             if (isGrounded && Input.GetKeyDown(KeyCode.S))
             {
-                ForceDown();
+                capsuleCollider.height = 1;
+                capsuleCollider.center = new Vector3(0, 0.5f, 0);
+                animator.Roll();
             }
 
             // Получаем данные о свайпе
@@ -77,7 +97,7 @@ namespace Assets.Scripts.Player
             // Плавно перемещаем персонажа в сторону
             Vector3 targetPosition = new Vector3(targetX, transform.position.y, transform.position.z);
 
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speedStrafe * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speedSprint * Time.deltaTime);
         }
 
         private void MoveRun()
@@ -86,18 +106,17 @@ namespace Assets.Scripts.Player
             Vector3 forwardMovement = transform.forward * speed * Time.deltaTime;
             
             // Перемещение персонажа
-            transform.Translate(forwardMovement, Space.World);
-            
-            animator.AnimateRun();
+            transform.Translate(forwardMovement, Space.World);     
         }
 
         private void Jump()
         {
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
+
         private void ForceDown()
         {
-            _rigidbody.AddForce(Vector3.down * jumpForce, ForceMode.Impulse);
+            _rigidbody.AddForce(Vector3.down * jumpForce * 2, ForceMode.Impulse);
         }
         
 
@@ -109,6 +128,12 @@ namespace Assets.Scripts.Player
                 isGrounded = true;
                 animator.AnimateLand();
             }
+            else 
+            {
+                speed = 0;
+                animator.AnimateStay();
+                isDead = true;
+            }
         }
 
         // Метод, вызываемый при потере контакта с землей (например, через OnCollisionExit)
@@ -118,6 +143,12 @@ namespace Assets.Scripts.Player
             {
                 isGrounded = false;
             }
+        }
+
+        public void OnRollEnd()
+        {
+            capsuleCollider.height = 2;
+            capsuleCollider.center = new Vector3(0, 1, 0);
         }
     }
 }
